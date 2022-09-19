@@ -19,71 +19,6 @@ const (
 	dbname   = "Samaritano"
 )
 
-type Logs struct {
-	Types string `json:"type,omitempty"`
-	Time  string `json:"time,omitempty"`
-}
-
-type Categoria struct {
-	IdCategoria int    `json:"Id_categoria,omitempty"`
-	Nombre      string `json:"Nombre,omitempty"`
-}
-
-type Producto struct {
-	IdProducto int    `json:"Id_producto,omitempty"`
-	Nombre     string `json:"Nombre,omitempty"`
-	Precio     int    `json:"Precio,omitempty"`
-	Categoria  int    `json:"Id_categoria,omitempty"`
-}
-
-type Pais struct {
-	IdPais int    `json:"Id_pais,omitempty"`
-	Nombre string `json:"Nombre,omitempty"`
-}
-
-type Vendedor struct {
-	IdVendedor int    `json:"Id_vendedor,omitempty"`
-	Nombre     string `json:"Nombre,omitempty"`
-	IdPais     int    `json:"Id_pais,omitempty"`
-}
-
-type Cliente struct {
-	IdClient  int    `json:"Id_cliente,omitempty"`
-	Nombre    string `json:"Nombre,omitempty"`
-	Apellido  string `json:"Apellido,omitempty"`
-	Direccion string `json:"Direccion,omitempty"`
-	Telefono  int    `json:"Telefono,omitempty"`
-	Tarjeta   int    `json:"Tarjeta,omitempty"`
-	Edad      int    `json:"Edad,omitempty"`
-	Salario   int    `json:"Salario,omitempty"`
-	Genero    string `json:"Genero,omitempty"`
-	IdPais    int    `json:"Id_pais,omitempty"`
-}
-
-type Orden struct {
-	IdOrden    int    `json:"Id_orden,omitempty"`
-	Fecha      string `json:"fecha,omitempty"`
-	Id_cliente int    `json:"Id_cliente,omitempty"`
-}
-
-type Orden_Aux struct {
-	IdOrden     int    `json:"Id_orden,omitempty"`
-	Linea_Orden int    `json:"Linea_orden,omitempty"`
-	Fecha       string `json:"fecha_orden,omitempty"`
-	Id_cliente  int    `json:"Id_cliente,omitempty"`
-	Id_vendedor int    `json:"Id_vendedor,omitempty"`
-	Id_producto int    `json:"Id_producto,omitempty"`
-	Cantidad    int    `json:"Cantidad,omitempty"`
-}
-
-type DetalleOrden struct {
-	Id_detalle  int `json:"Id_detalle,omitempty"`
-	Id_orden    int `json:"Id_orden,omitempty"`
-	Id_producto int `json:"Id_producto,omitempty"`
-	Cantidad    int `json:"Cantidad,omitempty"`
-	Id_vendedor int `json:"Id_vendedor,omitempty"`
-}
-
 type BestClient struct {
 	ID       int     `json:"ID,omitempty"`
 	Nombre   string  `json:"Nombre,omitempty"`
@@ -148,12 +83,12 @@ func Consulta2(c *fiber.Ctx) error {
 	query := "(SELECT Producto.Id_producto as ID, Producto.Nombre as Producto, Categoria.Nombre as Categoria, SUM(DetalleOrden.Cantidad) as Unidades, SUM(DetalleOrden.Cantidad*Producto.Precio) as Monto FROM "
 	query += " Producto INNER JOIN DetalleOrden ON Producto.Id_producto = DetalleOrden.Id_producto "
 	query += " INNER JOIN Categoria ON Categoria.Id_categoria = Producto.Id_categoria "
-	query += " GROUP BY Producto.Id_producto order by SUM(DetalleOrden.Cantidad*Producto.Precio) DESC LIMIT 0,1) "
+	query += " GROUP BY Producto.Id_producto order by SUM(DetalleOrden.Cantidad) DESC LIMIT 0,1) "
 	query += " UNION( "
 	query += " SELECT Producto.Id_producto as ID, Producto.Nombre as Producto, Categoria.Nombre as Categoria, SUM(DetalleOrden.Cantidad) as Unidades, SUM(DetalleOrden.Cantidad*Producto.Precio) as Monto FROM "
 	query += " Producto INNER JOIN DetalleOrden ON Producto.Id_producto = DetalleOrden.Id_producto "
 	query += " INNER JOIN Categoria ON Categoria.Id_categoria = Producto.Id_categoria "
-	query += " GROUP BY Producto.Id_producto order by SUM(DetalleOrden.Cantidad*Producto.Precio) ASC LIMIT 0,1); "
+	query += " GROUP BY Producto.Id_producto order by SUM(DetalleOrden.Cantidad) ASC LIMIT 0,1); "
 	rows, err := db.Query(query)
 	if err != nil {
 		return c.Status(500).SendString(err.Error())
@@ -221,11 +156,11 @@ func Consulta4(c *fiber.Ctx) error {
 }
 
 func Consulta5(c *fiber.Ctx) error {
-	query := "SELECT Pais.Id_pais AS Id_pais, Pais.Nombre as Nombre, SUM(DetalleOrden.Cantidad * Producto.Precio) AS Monto FROM "
-	query += " Vendedor inner JOIN DetalleOrden ON Vendedor.Id_vendedor = DetalleOrden.Id_vendedor "
+	query := "SELECT Pais.Id_pais AS ID, Pais.Nombre as Nombre, SUM(DetalleOrden.Cantidad * Producto.Precio) AS Monto FROM DetalleOrden "
 	query += " inner JOIN Orden ON Orden.Id_Orden = DetalleOrden.Id_orden "
+	query += " inner JOIN Cliente ON Cliente.Id_cliente = Orden.Id_cliente "
 	query += " inner JOIN Producto ON Producto.Id_producto = DetalleOrden.Id_producto "
-	query += " inner JOIN Pais ON Vendedor.Id_pais = Pais.Id_pais "
+	query += " inner JOIN Pais ON Cliente.Id_pais = Pais.Id_pais "
 	query += " group by Pais.Id_pais order by SUM(DetalleOrden.Cantidad * Producto.Precio) DESC limit 0,5; "
 	rows, err := db.Query(query)
 	if err != nil {
@@ -245,15 +180,15 @@ func Consulta5(c *fiber.Ctx) error {
 }
 
 func Consulta6(c *fiber.Ctx) error {
-	query := "(SELECT Categoria.Nombre as Nombre, SUM(DetalleOrden.Cantidad * Producto.Precio) as Monto FROM DetalleOrden "
+	query := "(SELECT Categoria.Nombre as Nombre, SUM(DetalleOrden.Cantidad) as Monto FROM DetalleOrden "
 	query += " INNER JOIN Producto ON Producto.Id_producto = DetalleOrden.Id_producto "
 	query += " INNER JOIN Categoria ON Categoria.Id_categoria = Producto.Id_categoria "
-	query += " GROUP BY Categoria.Id_categoria ORDER BY SUM(DetalleOrden.Cantidad * Producto.Precio) DESC LIMIT 0,1) "
+	query += " GROUP BY Categoria.Id_categoria ORDER BY SUM(DetalleOrden.Cantidad) DESC LIMIT 0,1) "
 	query += " UNION "
-	query += " (SELECT Categoria.Nombre as Nombre, SUM(DetalleOrden.Cantidad * Producto.Precio) as Monto FROM DetalleOrden "
+	query += " (SELECT Categoria.Nombre as Nombre, SUM(DetalleOrden.Cantidad ) as Monto FROM DetalleOrden "
 	query += " INNER JOIN Producto ON Producto.Id_producto = DetalleOrden.Id_producto "
 	query += " INNER JOIN Categoria ON Categoria.Id_categoria = Producto.Id_categoria "
-	query += " GROUP BY Categoria.Id_categoria ORDER BY SUM(DetalleOrden.Cantidad * Producto.Precio) ASC LIMIT 0,1); "
+	query += " GROUP BY Categoria.Id_categoria ORDER BY SUM(DetalleOrden.Cantidad ) ASC LIMIT 0,1); "
 	rows, err := db.Query(query)
 	if err != nil {
 		return c.Status(500).SendString(err.Error())
@@ -386,7 +321,6 @@ func Connect() error {
 }
 
 func main() {
-	fmt.Println("Hola mundo")
 	if err := Connect(); err != nil {
 		log.Fatal(err)
 	}
