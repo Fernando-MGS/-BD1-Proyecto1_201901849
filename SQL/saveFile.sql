@@ -1,4 +1,5 @@
 use Samaritano;
+SET GLOBAL local_infile=1;
 #Cargar datos de tabla Pais
 load data local infile '/home/fernando/Universidad/BD1/pais.csv' into table Pais fields terminated by ',' enclosed by '"' lines terminated by '\n' IGNORE 1 ROWS (Id_pais, Nombre);
 #Cargar datos de tabla Categoria
