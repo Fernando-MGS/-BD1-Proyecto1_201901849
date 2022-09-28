@@ -12,11 +12,11 @@ Primer proyecto del curso de Sistemas de Bases de Datos 1. Consiste en un API pa
 
 ## Esquema Conceptual
 
-![Esquema Conceptual](/IMG/e_conceptual.png)
+![Esquema Conceptual](/Manuales/IMG/e_conceptual.png)
 
 ## Esquema Lógico
 
-![Esquema lógico](/IMG/e_logico.jpeg)
+![Esquema lógico](/Manuales/IMG/e_logico.jpeg)
 
 ## Descripción de las tablas
 
